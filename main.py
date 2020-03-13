@@ -1,23 +1,45 @@
+import abc
+
+MAX_SHADE = 4
+
+# Set up ownership and claimability next
+# How will we identify players? Do they need their own object, or just a string?
+# We should probably set claimable when initializing...
+
+
 class Cell(object):
+    """Represents a single solar cell on our game board."""
+
     def __init__(self, coordinates):
         self.is_angled = False
         self.is_shaded = False
         self.coordinates = coordinates
+        self.claimable = True
+        self.claimed_by = None
 
     def __repr__(self):
-        return "<Cell(Angled: {})>".format(self.is_angled)
+        return "<Cell({})>".format(self.coordinates)
 
-    def toggle_angle(self):
+    def toggle_angle(self, player=None):
         self.is_angled = not self.is_angled
+        self.claimed_by = player
         return self.is_angled
 
+    def draw(self):
+        angle_representation = "↖" if self.is_angled else "_"
+        # Shaded/unshaded
+        shade_representation = "☁️" if self.is_shaded else "☀️"
+        return f"[{angle_representation} | {shade_representation}]"
 
-class Game(object):
+
+class AbstractGame(abc.ABC):
+    """Represents game state and the physical game board."""
+
     def __init__(self, w, h):
         self.w = w
         self.h = h
         self.game_board = self.create_game_board()
-        self._sun_angle = 4
+        self._sun_angle = MAX_SHADE
 
     def __repr__(self):
         return "<Game({}, {})>".format(self.w, self.h)
@@ -54,9 +76,6 @@ class Game(object):
             game_board.append(self.create_column(column_number))
         return game_board
 
-    def calculate_light_absorbed(self):
-        pass
-
     def _clear_all_shaddows(self):
         """Sets `is_shaded` property of all cells on the game board to False
 
@@ -76,27 +95,48 @@ class Game(object):
         x, y = cell_location
         cells_affected = []
         for i in range(1, self.sun_angle + 1):
-            current_cell = self.game_board[x][y]
+            current_cell = self.game_board[x + i][y]
             current_cell.is_shaded = True
             cells_affected.append(current_cell)
 
         return cells_affected
 
-    # def apply_shade(self):
-    #     """Calculate shade for all cells in the game board."""
+    def draw_game(self):
+        rows = [[] for i in range(self.h)]
 
-    #     # Lets go over each cell, left-to-right, top-to-bottom
-    #     for enumerate(row, i) in self.game_board:
-    #         for enumerate(column, j) in row:
-    #             cell = self.game_board[i][j]
+        for row in range(self.h):
+            for column in self.game_board:
+                rows[row].append(column[row].draw())
 
-    #             if cell.is_angled:
-    #                 # We've found a cell that is casting a shade
+        for row in rows:
+            print(row)
+            print("\n")
+
+    def apply_shade(self):
+        """Calculate shade for all cells in the game board."""
+
+        # Lets go over each cell, left-to-right, top-to-bottom
+        for i, column in enumerate(self.game_board):
+            for j, row in enumerate(column):
+                cell = self.game_board[i][j]
+
+                if cell.is_angled:
+                    # We've found a cell that is casting a shade
+                    game._cast_shaddow((i, j))
+
+    @abc.abstractmethod
+    def calculate_score(self):
+        """Return a tuple of both players' scores based on the current game board."""
+        pass
 
 
-game = Game(8, 8)
-print("a")
-game._cast_shaddow((0, 0))
+class FreeForAllGame(AbstractGame):
+    def calculate_score(self):
+        return super().calculate_score()
 
-for i in range(8):
-    print(game.game_board[i][0].is_shaded)
+
+game = FreeForAllGame(8, 8)
+game.game_board[0][0].toggle_angle(player=0)
+game.apply_shade()
+
+game.draw_game()
