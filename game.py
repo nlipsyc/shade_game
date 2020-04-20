@@ -1,6 +1,6 @@
 import abc
 
-MAX_SHADE = 4
+SHADE_SIZE = 3
 
 # Set up ownership and claimability next
 # How will we identify players? Do they need their own object, or just a string?
@@ -13,7 +13,7 @@ class PermissionError(Exception):
         self.player = player
 
     def __str__(self):
-        return f"PermissionError: Player {player} attempted to illegally toggle cell at {coordinates}"
+        return f"PermissionError: Player {self.player} attempted to illegally toggle cell at {self.coordinates}"
 
 
 class Cell(object):
@@ -35,7 +35,7 @@ class Cell(object):
         If not claimable, only the owner may toggle the cell.
         """
         if self.claimed_by != player and not self.claimable:
-            return PermissionError(self.coordinates, player)
+            raise PermissionError(self.coordinates, player)
         else:
             self.is_angled = not self.is_angled
             self.claimed_by = player
@@ -45,7 +45,8 @@ class Cell(object):
         angle_representation = "↖" if self.is_angled else "_"
         # Shaded/unshaded
         shade_representation = "☁️" if self.is_shaded else "☀️"
-        return f"[{angle_representation} | {shade_representation}]"
+        claimed_by_representation = self.claimed_by if self.claimed_by else "X"
+        return f"[{angle_representation} | {shade_representation} | {claimed_by_representation}]"
 
 
 class AbstractGame(abc.ABC):
@@ -57,7 +58,7 @@ class AbstractGame(abc.ABC):
         self.game_board = self.create_game_board()
         self.player_0_score = 0
         self.player_1_score = 0
-        self._sun_angle = MAX_SHADE
+        self._sun_angle = SHADE_SIZE
 
     def __repr__(self):
         return "<Game({}, {})>".format(self.w, self.h)
@@ -84,7 +85,7 @@ class AbstractGame(abc.ABC):
     def create_column(self, column_number):
         column = []
         for row_number in range(self.w):
-            column.append(Cell((row_number, column_number)))
+            column.append(Cell((column_number, row_number)))
 
         return column
 
@@ -131,7 +132,7 @@ class AbstractGame(abc.ABC):
                 rows[row].append(column[row].draw())
 
         for row in rows:
-            print(row)
+            print("  ".join(row))
             print("\n")
 
     def apply_shade(self):
@@ -147,6 +148,9 @@ class AbstractGame(abc.ABC):
                     self._cast_shaddow((i, j))
 
     def attempt_move(self, coordinates, player):
+        # There are some serious inconsitencies that need to be ironed out with the coordinate system not being
+        # reversed.  This needs to be done first
+
         x, y = coordinates
         try:
             self.game_board[x][y].toggle_angle(player=player)
@@ -177,7 +181,7 @@ class AbstractGame(abc.ABC):
 
 
 class FreeForAllGame(AbstractGame):
-    """All cells are claimable by defaultt, so no need to change anything here."""
+    """All cells are claimable by default, so no need to change anything here."""
 
     pass
 
@@ -190,10 +194,10 @@ class FreeForAllGame(AbstractGame):
 
 # print(game.calculate_score())
 
-game = FreeForAllGame(8, 8)
-game.attempt_move((3, 4), 0)
-game.attempt_move((4, 4), 1)
-game.apply_shade()
+# game = FreeForAllGame(8, 8)
+# game.attempt_move((3, 4), 0)
+# game.attempt_move((4, 4), 1)
+# game.apply_shade()
 
-game.draw_game()
-print(game.calculate_score())
+# game.draw_game()
+# print(game.calculate_score())

@@ -1,0 +1,28 @@
+[flake8]
+max-line-length = 120
+max-complexity = 10
+exclude=
+  .git,
+  media-server,
+  node_modules,
+  static,
+  templates,
+  html2text.py  # vendored library
+
+
+# T : `flake8-debugger` plugin messages
+# X : `flake8-per-file-ignores` messages
+select = C,E,F,W,T,X100
+
+
+# Ignored errors:
+#
+# E203: whitespace before ':' (can be useful when formatting lists slices,
+#       `black` formatter ignores this rule)
+# E501: line too long (this is better handled by pylint, where it can be more
+#       easily configured through the `ignore-long-lines` option)
+# W503: line break before binary operator (`black` formatter ignores this rule)
+ignore =
+  E203,
+  E501,
+  W503,
