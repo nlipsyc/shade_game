@@ -1,6 +1,5 @@
 import abc
-
-SHADE_SIZE = 3
+from constants import SHADE_SIZE
 
 # Set up ownership and claimability next
 # How will we identify players? Do they need their own object, or just a string?

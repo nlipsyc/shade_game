@@ -7,9 +7,5 @@ verify_ssl = true
 flake8 = "*"
 ipython = "*"
 
-[packages]
-termcolor = "*"
-pandas = "*"
-
 [requires]
 python_version = "3.7"
