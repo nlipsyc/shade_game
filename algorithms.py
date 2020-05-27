@@ -2,14 +2,65 @@ import abc
 import random
 
 
-class AbstractAlgorithm(abc.ABC):
-    def __init__(self, game_dimensions, shade_size, seed=None):
-        self.w, self.h = game_dimensions
+class CellCalculator(abc.ABC):
+    def __init__(self, game_dimensions, shade_size):
+        self.game_dimensions = game_dimensions
         self.shade_size = shade_size
 
+    @abc.abstractmethod
+    def get_claimable_cells(self):
+        pass
+
+
+class CursorInitializer(abc.ABC):
+    """Determines the starting index of an algorithm's cursor."""
+
+    def __init__(self, claimable_cells):
+        self.claimable_cells = claimable_cells
+
+    @abc.abstractmethod
+    def get_cursor_initial_index(self):
+        pass
+
+
+def all_column_calculator(w, shade_size):
+    """To maintain consistency, we need a column calculator for times when we don't want to restrict based on column."""
+
+    claimable_columns = list(range(w))
+
+    return claimable_columns
+
+
+def random_regular_column_calculator(w, shade_size):
+    """Sets the claimable columns to a random one and then spaces them out by 1 `shade_size`."""
+    offset = random.randint(0, shade_size)
+    claimable_columns = list((offset, w, shade_size + 1))
+
+    return claimable_columns
+
+
+def efficient_regular_column_calculator(w, shade_size):
+    """Sets the claimable columns to the leftmost one and then spaces them out by 1 `shade_size`.
+
+    This minimizes the chance of any cell being shaded by the algorithm's own moves or the other's.
+    """
+    claimable_columns = list(range(0, w, shade_size + 1))
+
+    return claimable_columns
+
+
+class AbstractAlgorithm(abc.ABC):
+    def __init__(self, game_dimensions, shade_size, column_calculator, seed=None):
+        self.w, self.h = game_dimensions
+        self.shade_size = shade_size
+        self._column_calculator = column_calculator
         # Allow passing in a seed to our algorithms to allow for consistent testing
         # None or no argument seeds from current time or from an operating system specific randomness source
         random.seed(a=seed)
+
+    @property
+    def _claimable_columns(self):
+        return self.column_calculator(self.w, self.shade_size)
 
     @abc.abstractmethod
     def propose_move(self):
@@ -36,17 +87,17 @@ class RandomAlgorithm(AbstractAlgorithm):
         return (x_move, y_move)
 
 
-class SystematicMaxShade(AbstractAlgorithm):
-    """Claimable spaces are columns 0 and 4. Random start point and go through in order.
+class SystematicAlgorithm(AbstractAlgorithm):
+    """Starts at a random spot in the allowed columns and goes through the rest in order.
 
-    When we initialize the algorithm, we determine all claimable cells into a list an pick a cell that we will start at.
-    After that we go through them systematically trying to claim the next one and advancing our cursor.
+    The column_calculator determine all claimable cells. We then pick a cell that we will start at and that we go
+    through them systematically trying to claim the next one and advancing our cursor.
     """
 
-    def __init__(self, game_dimensions, shade_size, seed=None):
-        super().__init__(game_dimensions, shade_size, seed=seed)
-
-        self._claimable_columns = [i for i in range(0, self.w, self.shade_size + 1)]
+    # Claimable cells should work, but the docstring needs updating to reflect the variability introduced by the
+    # injected column calculator
+    def __init__(self, game_dimensions, shade_size, column_calculator, seed=None):
+        super().__init__(game_dimensions, shade_size, column_calculator=column_calculator, seed=seed)
 
         self.claimable_cells = []
         for col in self._claimable_columns:
@@ -64,6 +115,35 @@ class SystematicMaxShade(AbstractAlgorithm):
             # We hit the end of our list, let's loop back around
             self.claimable_cells_cursor = 0
             return self.claimable_cells[self.claimable_cells_cursor]
+
+
+class AlgorithmFactory(object):
+    # Maybe algorithms should maintain track of turns elapsed? Use that to feed other params?
+    """Builds algorithms from claimable_cell_calculators and move_proposers.
+
+    Currently these are the two elements required to make an algorithm, but if that expands, this is the place to add
+    them into the pipeline.
+    """
+
+    def __init__(
+        self, game_dimensions, shade_size, cell_calculator_class, cursor_initializer_class, move_proposer_class
+    ):
+        self.claimable_cells = cell_calculator_class(game_dimensions, shade_size).get_claimable_cells()
+        self.claimable_cells_cursor = cursor_initializer_class(self.claimable_cells).get_cursor_initial_index
+        self.move_proposer = move_proposer_class(game_dimensions, shade_size)
+
+    def propose_move(self):
+        """Propose the next move and advance the cursor.
+
+        MoveProposer.propose_move will return a tuple of (move_to_make, new_cursor_position)
+        """
+        move_to_propose, new_cursor_position = self.move_proposer.propose_move(
+            self.claimable_cells, self.claimable_cells_cursor
+        )
+
+        self.claimable_cells_cursor = new_cursor_position
+
+        return move_to_propose
 
 
 """

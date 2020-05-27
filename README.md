@@ -43,6 +43,16 @@ That's because you're not supposed to play it smart ass, we've automated that pa
 
 Exactly. The idea is that you can watch evolution happening slower than it does in any kind of real ML training (allowing you to appreciate the nuance and beauty), but faster than it does in nature (because ain't nobody got time for that). Also, I want a cool electro-mechanical clanking thing doing machine learning in my living room. This will pit two rival algorithms against each other. Over the course of a day, the winner will be declared as the one who collects the most sunlight.  At then end of an elimination bracket (pairing many algorithms over many days), the highest scoring algorithms will live on, and also throw some slight variations on themselves in to the gene pool. I'll work up a dashboard eventually to monitor this.
 
+## There are libraries that do most of this, why aren't you leveraging those
+
+```
+Tell me and I forget,
+teach me and I remember,
+involve me and I learn.
+ ```
+
+This is not built for efficiency or performance, it's built for the joy of building a thing.
+
 ## Currently implemented
 
 Right now I'm just building out a rough framework to validate that the evolutionary algorithm can work in the way I'm picturing.  It could evolve into the actual code that will run the game, but right now it has a _lot_ of abstractions.

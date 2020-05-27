@@ -1,10 +1,10 @@
 from runtime import Runtime
-from algorithms import RandomAlgorithm
+from algorithms import RandomAlgorithm, SystematicMaxShade
 from game import FreeForAllGame
 
-NUMBER_OF_ROUNDS = 5000
+NUMBER_OF_ROUNDS = 1000
 
-rt = Runtime(FreeForAllGame, RandomAlgorithm, RandomAlgorithm)
+rt = Runtime(FreeForAllGame, RandomAlgorithm, SystematicMaxShade)
 rt.simulate_game()
 
 
@@ -27,4 +27,3 @@ tie_percent = (NUMBER_OF_ROUNDS - win_record[0] - win_record[1]) / NUMBER_OF_ROU
 print(
     f"Player 0 wins {win_record[0] / NUMBER_OF_ROUNDS}\nPlayer 1 wins {win_record[1] / NUMBER_OF_ROUNDS}\nTies: {tie_percent}"
 )
-

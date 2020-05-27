@@ -1,5 +1,5 @@
 import unittest
-from game import Cell, AbstractGame, FreeForAllGame
+from game import FreeForAllGame
 from algorithms import RandomAlgorithm, SystematicMaxShade
 
 
