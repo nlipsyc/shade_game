@@ -1,8 +1,12 @@
 import abc
 import random
 
+# The move proposer is the new class type of what we were previously calling algorithms
+
 
 class CellCalculator(abc.ABC):
+    """Determines which cells on the board can be claimed by our algorithm"""
+
     def __init__(self, game_dimensions, shade_size):
         self.game_dimensions = game_dimensions
         self.shade_size = shade_size
@@ -20,6 +24,38 @@ class CursorInitializer(abc.ABC):
 
     @abc.abstractmethod
     def get_cursor_initial_index(self):
+        pass
+
+
+class MoveProposer(abc.ABC):
+    """Proposes a new cursor index that will be used to make a move."""
+
+    @abc.abstractmethod
+    def propose_move(self, claimable_cells, claimable_cells_cursor):
+        pass
+
+
+class AbstractAlgorithm(abc.ABC):
+    def __init__(self, game_dimensions, shade_size, column_calculator, seed=None):
+        self.w, self.h = game_dimensions
+        self.shade_size = shade_size
+        self._column_calculator = column_calculator
+        # Allow passing in a seed to our algorithms to allow for consistent testing
+        # None or no argument seeds from current time or from an operating system specific randomness source
+        random.seed(a=seed)
+
+    @property
+    def _claimable_columns(self):
+        return self.column_calculator(self.w, self.shade_size)
+
+    @abc.abstractmethod
+    def propose_move(self):
+        """Propose a move to Game.attempt_move().
+        This takes the form of tuple(x, y)
+
+        If it is a legal move, attempt_move will return True our flow is done.
+        If it is an illegal move, attempt_move will return False and we will try again with a different move.
+        """
         pass
 
 
@@ -49,30 +85,6 @@ def efficient_regular_column_calculator(w, shade_size):
     return claimable_columns
 
 
-class AbstractAlgorithm(abc.ABC):
-    def __init__(self, game_dimensions, shade_size, column_calculator, seed=None):
-        self.w, self.h = game_dimensions
-        self.shade_size = shade_size
-        self._column_calculator = column_calculator
-        # Allow passing in a seed to our algorithms to allow for consistent testing
-        # None or no argument seeds from current time or from an operating system specific randomness source
-        random.seed(a=seed)
-
-    @property
-    def _claimable_columns(self):
-        return self.column_calculator(self.w, self.shade_size)
-
-    @abc.abstractmethod
-    def propose_move(self):
-        """Propose a move to Game.attempt_move().
-        This takes the form of tuple(x, y)
-
-        If it is a legal move, attempt_move will return True our flow is done.
-        If it is an illegal move, attempt_move will return False and we will try again with a different move.
-        """
-        pass
-
-
 class RandomAlgorithm(AbstractAlgorithm):
     """Makes a completely random move given the game dimensions.
 
@@ -87,8 +99,8 @@ class RandomAlgorithm(AbstractAlgorithm):
         return (x_move, y_move)
 
 
-class SystematicAlgorithm(AbstractAlgorithm):
-    """Starts at a random spot in the allowed columns and goes through the rest in order.
+class SystematicAlgorithm(MoveProposer):
+    """Proposes a the claim and goes through the rest in order.
 
     The column_calculator determine all claimable cells. We then pick a cell that we will start at and that we go
     through them systematically trying to claim the next one and advancing our cursor.
@@ -117,33 +129,66 @@ class SystematicAlgorithm(AbstractAlgorithm):
             return self.claimable_cells[self.claimable_cells_cursor]
 
 
-class AlgorithmFactory(object):
-    # Maybe algorithms should maintain track of turns elapsed? Use that to feed other params?
-    """Builds algorithms from claimable_cell_calculators and move_proposers.
-
-    Currently these are the two elements required to make an algorithm, but if that expands, this is the place to add
-    them into the pipeline.
-    """
-
+class ConstructedAlgorithm(AbstractAlgorithm):
     def __init__(
-        self, game_dimensions, shade_size, cell_calculator_class, cursor_initializer_class, move_proposer_class
+        self, game_dimensions, shade_size, cell_calculator_class, cursor_initializer_class, move_proposer_class, seed
     ):
         self.claimable_cells = cell_calculator_class(game_dimensions, shade_size).get_claimable_cells()
+
         self.claimable_cells_cursor = cursor_initializer_class(self.claimable_cells).get_cursor_initial_index
         self.move_proposer = move_proposer_class(game_dimensions, shade_size)
 
     def propose_move(self):
-        """Propose the next move and advance the cursor.
+        """Propose the next move to attempt.
 
-        MoveProposer.propose_move will return a tuple of (move_to_make, new_cursor_position)
+        MoveProposer.propose_move will return a cursor position
         """
-        move_to_propose, new_cursor_position = self.move_proposer.propose_move(
-            self.claimable_cells, self.claimable_cells_cursor
-        )
+        # In order to allow the cursor to start where the cursor suggests it should, we want to return the _current_
+        # position and then advance the cursor to prepare for the next move.
+        move_to_propose = self.claimable_cells[self.claimable_cells_cursor]
+
+        new_cursor_position = self.move_proposer.propose_move(self.claimable_cells, self.claimable_cells_cursor)
 
         self.claimable_cells_cursor = new_cursor_position
 
         return move_to_propose
+
+
+class GameParamaters(object):
+    """Config object that helps us ensure we have all needed game parameters when creating an algorithm."""
+
+    def __init__(self, game_dimensions, shade_size):
+        self.game_dimensions = game_dimensions
+        self.shade_size = shade_size
+
+
+class AlgorithmParamaters(object):
+    """Config object that helps us ensure we have all needed algorithm parameters when creating an algorithm."""
+
+    def __init__(self, cell_calculator_class, cursor_initializer_class, move_proposer_class):
+        self.cell_calculator_class = cell_calculator_class
+        self.cursor_initializer_class = cursor_initializer_class
+        self.move_proposer_class = move_proposer_class
+
+
+def algorithm_factory(game_parameters, algorithm_paramaters, seed=None):
+    # Maybe algorithms should maintain track of turns elapsed? Use that to feed other params?
+    """Builds algorithms using packages of config options.  A set of configurations is need for the game itself as well
+    as one for each algorithm (currently only supports single-alg creation).
+
+    Currently these are the three elements required to make an algorithm, but if that expands, this is the place to add
+    them into the pipeline.
+
+    Moving forward, we can use this to build up algorithms from multiple other ones.
+    """
+    return ConstructedAlgorithm(
+        game_parameters.game_dimensions,
+        game_parameters.shade_size,
+        algorithm_paramaters.cell_calculator_class,
+        algorithm_paramaters.cursor_initializer_class,
+        algorithm_paramaters.move_proposer_class,
+        seed,
+    )
 
 
 """
