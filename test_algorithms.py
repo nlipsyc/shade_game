@@ -6,7 +6,7 @@ from algorithms import AlgorithmParamaters, ConstructedAlgorithm, GameParamaters
 
 
 @pytest.fixture()
-def mock_game_parameters():
+def mock_game_params():
     return GameParamaters(mock.Mock(), mock.Mock())
 
 
@@ -15,15 +15,15 @@ def mock_algorithm_parameters():
     return AlgorithmParamaters(mock.Mock(), mock.Mock(), mock.Mock())
 
 
-def test_game_parameters():
+def test_game_params():
     """Should initialize a GameParameters object."""
     expected_dimensions = mock.Mock()
     expected_shade_size = mock.Mock()
 
-    game_parameters = GameParamaters(expected_dimensions, expected_shade_size)
+    game_params = GameParamaters(expected_dimensions, expected_shade_size)
 
-    assert game_parameters.game_dimensions is expected_dimensions
-    assert game_parameters.shade_size is expected_shade_size
+    assert game_params.game_dimensions is expected_dimensions
+    assert game_params.shade_size is expected_shade_size
 
 
 def test_algorithm_parameters():
@@ -31,27 +31,47 @@ def test_algorithm_parameters():
     expected_cursor_initializer = mock.Mock()
     expected_move_proposer = mock.Mock()
 
-    algorithm_paramaters = AlgorithmParamaters(
-        expected_cell_calculator, expected_cursor_initializer, expected_move_proposer
-    )
+    alg_params = AlgorithmParamaters(expected_cell_calculator, expected_cursor_initializer, expected_move_proposer)
 
-    assert algorithm_paramaters.cell_calculator_class is expected_cell_calculator
-    assert algorithm_paramaters.cursor_initializer_class is expected_cursor_initializer
-    assert algorithm_paramaters.move_proposer_class is expected_move_proposer
+    assert alg_params.cell_calculator_class is expected_cell_calculator
+    assert alg_params.cursor_initializer_class is expected_cursor_initializer
+    assert alg_params.move_proposer_class is expected_move_proposer
 
 
-def test_algorithm_factory(mock_game_parameters, mock_algorithm_parameters):
+def test_algorithm_factory(mock_game_params, mock_algorithm_parameters):
     """Should return a valid ConstructedAlgorithm."""
-    algorithm_instance = algorithm_factory(mock_game_parameters, mock_algorithm_parameters, seed=42)
+    algorithm_instance = algorithm_factory(mock_game_params, mock_algorithm_parameters, seed=42)
     assert isinstance(algorithm_instance, ConstructedAlgorithm)
 
 
-# class TestAlgorithims(unittest.TestCase):
-#     def test_initialization(self):
-#         alg = RandomAlgorithm((4, 6), 3)
-#         self.assertAlmostEqual(alg.w, 4)
-#         self.assertAlmostEqual(alg.shade_size, 3)
+# def test_random_seed_move_proposal(mock_game_params, mock_algorithm_parameters):
+#     """Needs a valid cell calculator before this test makes sense."""
+#     """Should have the same results when intialized multiple times with the same seed."""
+#     algorithm_1 = algorithm_factory(mock_game_params, mock_algorithm_parameters, seed=42)
+#     move_1 = algorithm_1.propose_move()
 
+#     algorithm_2 = algorithm_factory(mock_game_params, mock_algorithm_parameters, seed=42)
+#     move_2 = algorithm_2.propose_move()
+
+#     assert move_1 == move_2
+
+
+# def test_different_seed_move_proposal(mock_game_params, mock_algorithm_parameters):
+#     """Needs a valid cell calculator before this test makes sense."""
+#     """Should have different results with different seeds.
+
+#     This is being done to validate that the results of the above test are actually related to the seed value.
+#     """
+#     algorithm_1 = algorithm_factory(mock_game_params, mock_algorithm_parameters, seed=42)
+#     move_1 = algorithm_1.propose_move()
+
+#     algorithm_2 = algorithm_factory(mock_game_params, mock_algorithm_parameters, seed=43)
+#     move_2 = algorithm_2.propose_move()
+
+#     assert move_1 != move_2
+
+
+# class TestAlgorithims(unittest.TestCase):
 #     def test_random_seed_repeatability(self):
 #         """Should yield the same results when intialized multiple times with the same seed."""
 

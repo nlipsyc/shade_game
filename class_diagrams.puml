@@ -1,0 +1,64 @@
+@startuml
+
+class GameParameters {
+    Tuple[int, int] game_dimensions
+    Int shade_size
+
+}
+
+class AlgorithmParameters {
+    CellCalculator cell_calculator_class
+    CursorInitializer cursor_initializer_class
+    MoveProposer move_proposer_class
+
+    }
+
+class AbstractAlgorithm {
+    GameParameters game_params
+    AlgorithmParameters algorithm_parameters
+    Int seed
+    Optional[str] seed
+    List[???] claimable_cells
+    Int claimable_cells_cursor
+    MoveProposer move_proposer
+    {abstract} Tuple[int, int] propose_move()
+}
+
+class ConstructedAlgorithm {
+    Int seed
+    Tuple[int, int] propose_move()
+}
+
+class CellCalculator {
+    Tuple[int, int] game_dimensions
+    Int shade_size
+    {abstract} List[???] get_claimable_cells()
+}
+
+class CursorInitializer {
+    List[???] claimable_cells
+    {abstract} Int get_cursor_initial_index()
+}
+
+class MoveProposer {
+    GameParameters game_params
+    List[???] _claimable_cells
+    Int _cursor_index
+    {abstract} propose_move(game_params, cell)
+}
+
+
+AbstractAlgorithm o-- GameParameters
+AbstractAlgorithm o-- AlgorithmParameters
+
+ConstructedAlgorithm <|-- AbstractAlgorithm
+
+CellCalculator o.. GameParameters
+MoveProposer o.. GameParameters
+
+AlgorithmParameters <|-- CellCalculator
+AlgorithmParameters <|-- CursorInitializer
+AlgorithmParameters <|-- MoveProposer
+
+
+@enduml
