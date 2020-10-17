@@ -1,10 +1,12 @@
 from runtime import Runtime
-from algorithms import RandomAlgorithm, SystematicMaxShade
+from algorithms import random_algorithm_factory
 from game import FreeForAllGame
 
-NUMBER_OF_ROUNDS = 1000
+NUMBER_OF_ROUNDS = 100
 
-rt = Runtime(FreeForAllGame, RandomAlgorithm, SystematicMaxShade)
+random_algorithm_0 = random_algorithm_factory()
+random_algorithm_1 = random_algorithm_factory()
+rt = Runtime(FreeForAllGame, random_algorithm_0, random_algorithm_1)
 rt.simulate_game()
 
 

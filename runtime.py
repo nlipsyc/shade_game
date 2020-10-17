@@ -2,7 +2,7 @@ from constants import SHADE_SIZE, GAME_SIZE, TURNS_PER_GAME
 
 
 class Runtime(object):
-    def __init__(self, game_class, player_0_class, player_1_class, **kwargs):
+    def __init__(self, game_class, player_0_instance, player_1_instance, **kwargs):
         self.number_of_turns = 32
         self.print_moves = False
         self.print_scores = False
@@ -16,8 +16,6 @@ class Runtime(object):
         self.__dict__.update(kwargs)
 
         self.game = game_class(*self.game_size)
-        player_0_instance = player_0_class(self.game_size, self.shade_size)
-        player_1_instance = player_1_class(self.game_size, self.shade_size)
 
         self.player_0 = {"algorithm": player_0_instance, "name": 0}
         self.player_1 = {"algorithm": player_1_instance, "name": 1}

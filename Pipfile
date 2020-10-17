@@ -6,9 +6,8 @@ verify_ssl = true
 [dev-packages]
 pytest = "*"
 flake8 = "*"
-
-[packages]
 mock = "*"
+black = "*"
 
 [requires]
-python_version = "3.7"
+python_version = "3.9"

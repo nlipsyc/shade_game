@@ -64,7 +64,7 @@ class AbstractGame(abc.ABC):
 
     @property
     def sun_angle(self):
-        """ The angle that the sun is at relative to the game board. It coresponds to the number of cells to the
+        """The angle that the sun is at relative to the game board. It coresponds to the number of cells to the
         right that a cell is able to shade.
 
         The sun starts at its most oblique angle (sun_angle=3). As it moves through the day, closer to straight on

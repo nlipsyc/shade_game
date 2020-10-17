@@ -1,13 +1,19 @@
 import mock
 import pytest
+import constants
 
 # from game import FreeForAllGame
-from algorithms import AlgorithmParamaters, ConstructedAlgorithm, GameParamaters, algorithm_factory
+from algorithms import (
+    AlgorithmParamaters,
+    ConstructedAlgorithm,
+    GameParamaters,
+    algorithm_factory,
+)
 
 
 @pytest.fixture()
 def mock_game_params():
-    return GameParamaters(mock.Mock(), mock.Mock())
+    return GameParamaters(constants.GAME_SIZE, mock.Mock())
 
 
 @pytest.fixture()
@@ -27,20 +33,23 @@ def test_game_params():
 
 
 def test_algorithm_parameters():
+
     expected_cell_calculator = mock.Mock()
     expected_cursor_initializer = mock.Mock()
     expected_move_proposer = mock.Mock()
 
-    alg_params = AlgorithmParamaters(expected_cell_calculator, expected_cursor_initializer, expected_move_proposer)
+    alg_params = AlgorithmParamaters(
+        expected_cell_calculator, expected_cursor_initializer, expected_move_proposer
+    )
 
     assert alg_params.cell_calculator_class is expected_cell_calculator
     assert alg_params.cursor_initializer_class is expected_cursor_initializer
     assert alg_params.move_proposer_class is expected_move_proposer
 
 
-def test_algorithm_factory(mock_game_params, mock_algorithm_parameters):
+def test_algorithm_factory(mock_algorithm_parameters):
     """Should return a valid ConstructedAlgorithm."""
-    algorithm_instance = algorithm_factory(mock_game_params, mock_algorithm_parameters, seed=42)
+    algorithm_instance = algorithm_factory(mock_algorithm_parameters, seed=42)
     assert isinstance(algorithm_instance, ConstructedAlgorithm)
 
 

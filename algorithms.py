@@ -1,7 +1,7 @@
 import abc
 import random
 
-from typing import Tuple, List
+import constants
 
 # The move proposer is the new class type of what we were previously calling algorithms
 
@@ -9,21 +9,40 @@ from typing import Tuple, List
 class GameParamaters(object):
     """Config object that helps us ensure we have all needed game parameters when creating an algorithm."""
 
-    def __init__(self, game_dimensions, shade_size):
+    def __init__(self, game_dimensions: list[int], shade_size):
         self.game_dimensions = game_dimensions
         self.shade_size = shade_size
 
 
+class DefaultGameParameters(GameParamaters):
+    def __init__(self):
+        super().__init__(constants.GAME_SIZE, constants.SHADE_SIZE)
+
+
 class CellCalculator(abc.ABC):
-    """Determines which cells on the board can be claimed by our algorithm"""
+    """Determines which cells on the board can be claimed by our algorithm. """
 
     def __init__(self, game_params):
         self.game_dimensions = game_params.game_dimensions
         self.shade_size = game_params.shade_size
 
     @abc.abstractmethod
-    def get_claimable_cells(self):
+    def get_claimable_cells(self) -> list[tuple[int, int]]:
+        """Retruns a one dimensional list of tuples representing the ordered coordinates of the cells."""
         pass
+
+
+class AllCellCalculator(CellCalculator):
+    """All cells on the board can be claimed."""
+
+    def get_claimable_cells(self):
+        claimable_cells = []
+        h, w = self.game_dimensions
+        for row in range(h):
+            for col in range(w):
+                claimable_cells.append((col, row))
+
+        return claimable_cells
 
 
 class CursorInitializer(abc.ABC):
@@ -37,6 +56,17 @@ class CursorInitializer(abc.ABC):
         pass
 
 
+class OriginCursorInitializer(CursorInitializer):
+    """Initializes our cursor at the first claimable cell of the first row.
+
+    TODO Test me! I don't trust this
+    TODO This breaks if the first row is unclaimable.  Handle that edge case when we get to it.
+    """
+
+    def get_cursor_initial_index(self):
+        return self.claimable_cells[0]
+
+
 class MoveProposer(abc.ABC):
     """Proposes a the cursor index that will be used to make the next move.
 
@@ -44,9 +74,7 @@ class MoveProposer(abc.ABC):
     cursor based on its internal logic.
     """
 
-    # Might need python 3.8?
-    def __init__(self, game_params: GameParamaters, claimable_cells: List, cursor_index: int):
-        foo = 1
+    def __init__(self, game_params: GameParamaters, claimable_cells: list, cursor_index: int):
         self._game_params = game_params
         self._claimable_cells = claimable_cells
         self._cursor_index = cursor_index
@@ -56,8 +84,18 @@ class MoveProposer(abc.ABC):
         pass
 
 
+class RandomMoveProposer(MoveProposer):
+    def propose_move(self):
+        return random.choice(self._claimable_cells)
+
+
 class AlgorithmParamaters(object):
-    """Config object that helps us ensure we have all needed algorithm parameters when creating an algorithm."""
+    """Config object that helps us ensure we have all needed algorithm parameters when creating an algorithm.
+
+    Algorithms are defined by 3 factors, the cells they are allowed to suggest (CellCalculator), the way they will
+    choose which of the available cells they will start on (CursorInitializer), and the specific algorithm they use
+    to determine which cell should be chosen next (MoveProposer).
+    """
 
     def __init__(
         self,
@@ -86,7 +124,7 @@ class AbstractAlgorithm(abc.ABC):
         self.move_proposer_class = alg_params.move_proposer_class
 
     @abc.abstractmethod
-    def propose_move(self) -> Tuple:
+    def propose_move(self) -> tuple:
         """Propose a move to Game.attempt_move().
         This takes the form of tuple(x, y)
 
@@ -98,11 +136,6 @@ class AbstractAlgorithm(abc.ABC):
     @property
     @abc.abstractmethod
     def claimable_cells(self):
-        pass
-
-    @property
-    @abc.abstractmethod
-    def claimable_cells_cursor(self):
         pass
 
     @property
@@ -140,20 +173,6 @@ def efficient_regular_column_calculator(w, shade_size):
     return claimable_columns
 
 
-class RandomAlgorithm(AbstractAlgorithm):
-    """Makes a completely random move given the game dimensions.
-
-    Mostly just useful for a POC, but could also be used as a baseline to benchmark other algorithms.
-    """
-
-    def propose_move(self):
-
-        x_move = random.randrange(self.w)
-        y_move = random.randrange(self.h)
-
-        return (x_move, y_move)
-
-
 class SystematicMoveProposer(MoveProposer):
     """Proposes a the claim and goes through the rest in order.
 
@@ -175,19 +194,24 @@ class SystematicMoveProposer(MoveProposer):
 
 
 class ConstructedAlgorithm(AbstractAlgorithm):
+    """The canonical way to build up an algorithm.
+
+    Other classes inhering from AbstractAlgorithm are done for demo/POC purposes.
+    """
+
+    def __init__(self, game_params, alg_params, seed=None):
+        super().__init__(game_params, alg_params, seed=seed)
+        cursor_initializer = self.cursor_initializer_class(self.claimable_cells)
+        self.claimable_cells_cursor = cursor_initializer.get_cursor_initial_index()
+
     @property
     def claimable_cells(self):
         cell_calculator = self.cell_calculator_class(self._game_params)
         return cell_calculator.get_claimable_cells()
 
     @property
-    def claimable_cells_cursor(self):
-        cursor_initializer = self.cursor_initializer_class(self.claimable_cells)
-        return cursor_initializer.get_cursor_initial_index()
-
-    @property
     def move_proposer(self):
-        return self.move_proposer_class(self._game_params)
+        return self.move_proposer_class(self._game_params, self.claimable_cells, self.claimable_cells_cursor)
 
     def propose_move(self):
         """Propose the next move to attempt.
@@ -196,16 +220,18 @@ class ConstructedAlgorithm(AbstractAlgorithm):
         """
         # In order to allow the cursor to start where the cursor suggests it should, we want to return the _current_
         # position and then advance the cursor to prepare for the next move.
-        move_to_propose = self.claimable_cells[self.claimable_cells_cursor]
+        move_to_propose = self.claimable_cells_cursor
 
-        new_cursor_position = self.move_proposer.propose_move(self.claimable_cells, self.claimable_cells_cursor)
+        new_cursor_position = self.move_proposer.propose_move()
 
         self.claimable_cells_cursor = new_cursor_position
 
         return move_to_propose
 
 
-def algorithm_factory(game_params: GameParamaters, alg_params: AlgorithmParamaters, seed=None):
+def algorithm_factory(
+    alg_params: AlgorithmParamaters, game_params: GameParamaters = DefaultGameParameters(), seed=None
+):
     # Maybe algorithms should maintain track of turns elapsed? Use that to feed other params?
     """Builds algorithms using packages of config options.  A set of configurations is need for the game itself as well
     as one for each algorithm (currently only supports single-alg creation).
@@ -215,7 +241,17 @@ def algorithm_factory(game_params: GameParamaters, alg_params: AlgorithmParamate
 
     Moving forward, we can use this to build up algorithms from multiple other ones.
     """
-    return ConstructedAlgorithm(GameParamaters, AlgorithmParamaters, seed)
+    return ConstructedAlgorithm(game_params, alg_params, seed)
+
+
+def random_algorithm_factory() -> ConstructedAlgorithm:
+    """Makes a completely random move given the game dimensions.
+
+    Mostly just useful for a POC, but could also be used as a baseline to benchmark other algorithms.
+    """
+    alg_params = AlgorithmParamaters(AllCellCalculator, OriginCursorInitializer, RandomMoveProposer)
+
+    return algorithm_factory(alg_params)
 
 
 """
