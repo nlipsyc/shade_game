@@ -50,7 +50,7 @@ player_0_score_counts = Counter([log.player_0_score for log in game_log_collecti
 player_1_score_counts = Counter([log.player_1_score for log in game_log_collection])
 print(f"Player 0 scores {sorted(player_0_score_counts.items())}")
 print(f"Player 1 scores {sorted(player_1_score_counts.items())}")
-print(f"Win counts{Counter([log.winner for log in game_log_collection])}")
+print(f"Win counts{Counter([log.winner for log in game_log_collection]).items()}")
 # print(
 #     f"Player 0 wins {win_record[0]}\nPlayer 1 wins {win_record[1]}\nTies: {NUMBER_OF_ROUNDS - win_record[0] - win_record[1]}"
 # )

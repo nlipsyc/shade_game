@@ -230,7 +230,7 @@ class ConstructedAlgorithm(AbstractAlgorithm):
 
 
 def algorithm_factory(
-    alg_params: AlgorithmParamaters, game_params: GameParamaters = DefaultGameParameters(), seed=None
+    alg_params: AlgorithmParamaters, game_params: GameParamaters = DefaultGameParameters(), seed: int = None
 ):
     # Maybe algorithms should maintain track of turns elapsed? Use that to feed other params?
     """Builds algorithms using packages of config options.  A set of configurations is need for the game itself as well
@@ -244,14 +244,14 @@ def algorithm_factory(
     return ConstructedAlgorithm(game_params, alg_params, seed)
 
 
-def random_algorithm_factory() -> ConstructedAlgorithm:
+def random_algorithm_factory(seed=None) -> ConstructedAlgorithm:
     """Makes a completely random move given the game dimensions.
 
     Mostly just useful for a POC, but could also be used as a baseline to benchmark other algorithms.
     """
     alg_params = AlgorithmParamaters(AllCellCalculator, OriginCursorInitializer, RandomMoveProposer)
 
-    return algorithm_factory(alg_params)
+    return algorithm_factory(alg_params, seed=seed)
 
 
 """
