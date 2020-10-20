@@ -56,10 +56,10 @@ def test_algorithm_factory(mock_algorithm_parameters):
 def test_random_seed_move_proposal(mock_game_params, mock_algorithm_parameters):
     """Needs a valid cell calculator before this test makes sense."""
     """Should have the same results when intialized multiple times with the same seed."""
-    algorithm_1 = algorithm_factory(mock_algorithm_parameters, seed=42)
+    algorithm_1 = random_algorithm_factory(seed=42)
     move_1 = algorithm_1.propose_move()
 
-    algorithm_2 = algorithm_factory(mock_algorithm_parameters, seed=42)
+    algorithm_2 = random_algorithm_factory(seed=42)
     move_2 = algorithm_2.propose_move()
 
     assert move_1 == move_2

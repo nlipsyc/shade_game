@@ -8,16 +8,12 @@ class CursorInitializer(abc.ABC):
         self.claimable_cells = claimable_cells
 
     @abc.abstractmethod
-    def get_cursor_initial_index(self):
+    def get_cursor_initial_index(self) -> int:
         pass
 
 
 class OriginCursorInitializer(CursorInitializer):
-    """Initializes our cursor at the first claimable cell of the first row.
+    """Initializes our cursor at the first claimable cell of the first claimable row."""
 
-    TODO Test me! I don't trust this
-    TODO This breaks if the first row is unclaimable.  Handle that edge case when we get to it.
-    """
-
-    def get_cursor_initial_index(self):
-        return self.claimable_cells[0]
+    def get_cursor_initial_index(self) -> int:
+        return 0

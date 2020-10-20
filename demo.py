@@ -1,14 +1,15 @@
 from collections import Counter
 from dataclasses import dataclass
 
-from algorithms import random_algorithm_factory
+from algorithms import random_algorithm_factory, systematic_max_shade_factory
 from game import FreeForAllGame
 from runtime import Runtime
 
 NUMBER_OF_ROUNDS = 100
 
 random_algorithm_0 = random_algorithm_factory()
-random_algorithm_1 = random_algorithm_factory()
+# random_algorithm_0 = systematic_max_shade_factory()
+random_algorithm_1 = systematic_max_shade_factory()
 rt = Runtime(FreeForAllGame, random_algorithm_0, random_algorithm_1)
 rt.simulate_game()
 
@@ -47,14 +48,15 @@ for game in range(NUMBER_OF_ROUNDS):
 
     print("=======================\n")
 player_0_score_counts = Counter([log.player_0_score for log in game_log_collection])
+player_0_score_counts = sorted(player_0_score_counts.items())
+player_0_score_counts = ", ".join(f"{score}:{count}" for score, count in player_0_score_counts)
+
 player_1_score_counts = Counter([log.player_1_score for log in game_log_collection])
-print(f"Player 0 scores {sorted(player_0_score_counts.items())}")
-print(f"Player 1 scores {sorted(player_1_score_counts.items())}")
-print(f"Win counts{Counter([log.winner for log in game_log_collection]).items()}")
-# print(
-#     f"Player 0 wins {win_record[0]}\nPlayer 1 wins {win_record[1]}\nTies: {NUMBER_OF_ROUNDS - win_record[0] - win_record[1]}"
-# )
-# tie_percent = (NUMBER_OF_ROUNDS - win_record[0] - win_record[1]) / NUMBER_OF_ROUNDS
-# print(
-#     f"Player 0 wins {win_record[0] / NUMBER_OF_ROUNDS}\nPlayer 1 wins {win_record[1] / NUMBER_OF_ROUNDS}\nTies: {tie_percent}"
-# )
+player_1_score_counts = sorted(player_1_score_counts.items())
+player_1_score_counts = ", ".join(f"{score}:{count}" for score, count in player_1_score_counts)
+
+win_counts = Counter([log.winner for log in game_log_collection]).items()
+win_counts = ", ".join(f"{winner}: {count}" for winner, count in win_counts)
+print(f"Player 0 (score: count) -- {player_0_score_counts}")
+print(f"Player 1 (score: count) -- {player_1_score_counts}")
+print(f"Win counts (winner: count) -- {win_counts}")

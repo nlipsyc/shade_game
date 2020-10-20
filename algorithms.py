@@ -2,9 +2,9 @@ import abc
 import random
 
 import constants
-from cell_calculators import AllCellCalculator, CellCalculator
+from cell_calculators import AllCellCalculator, CellCalculator, MaxShadeCellCalculator
 from cursor_initializers import CursorInitializer, OriginCursorInitializer
-from move_proposers import MoveProposer, RandomMoveProposer
+from move_proposers import MoveProposer, RandomMoveProposer, SystematicMoveProposer
 
 # The move proposer is the new class type of what we were previously calling algorithms
 
@@ -77,55 +77,6 @@ class AbstractAlgorithm(abc.ABC):
         pass
 
 
-# TODO Turn into subclass of cell calculator
-def all_column_calculator(w, shade_size):
-    """To maintain consistency, we need a column calculator for times when we don't want to restrict based on column."""
-
-    claimable_columns = list(range(w))
-
-    return claimable_columns
-
-
-# TODO Turn into subclass of cell calculator
-def random_regular_column_calculator(w, shade_size):
-    """Sets the claimable columns to a random one and then spaces them out by 1 `shade_size`."""
-    offset = random.randint(0, shade_size)
-    claimable_columns = list((offset, w, shade_size + 1))
-
-    return claimable_columns
-
-
-# TODO Turn into subclass of cell calculator
-def efficient_regular_column_calculator(w, shade_size):
-    """Sets the claimable columns to the leftmost one and then spaces them out by 1 `shade_size`.
-
-    This minimizes the chance of any cell being shaded by the algorithm's own moves or the other's.
-    """
-    claimable_columns = list(range(0, w, shade_size + 1))
-
-    return claimable_columns
-
-
-class SystematicMoveProposer(MoveProposer):
-    """Proposes a the claim and goes through the rest in order.
-
-    The column_calculator determine all claimable cells. We then pick a cell that we will start at and that we go
-    through them systematically trying to claim the next one and advancing our cursor.
-    """
-
-    # Claimable cells should work, but the docstring needs updating to reflect the variability introduced by the
-    # injected column calculator
-    def propose_move(self):
-        try:
-            self._cursor_index += 1
-            return self._claimable_cells[self._cursor_index]
-
-        except IndexError:
-            # We hit the end of our list, let's loop back around
-            self._cursor_index = 0
-            return self._claimable_cells[self._cursor_index]
-
-
 class ConstructedAlgorithm(AbstractAlgorithm):
     """The canonical way to build up an algorithm.
 
@@ -153,7 +104,7 @@ class ConstructedAlgorithm(AbstractAlgorithm):
         """
         # In order to allow the cursor to start where the cursor suggests it should, we want to return the _current_
         # position and then advance the cursor to prepare for the next move.
-        move_to_propose = self.claimable_cells_cursor
+        move_to_propose = self.claimable_cells[self.claimable_cells_cursor]
 
         new_cursor_position = self.move_proposer.propose_move()
 
@@ -193,7 +144,9 @@ def systematic_max_shade_factory(seed=None) -> ConstructedAlgorithm:
     This algorithm works in order (arbitrary) but only makes moves in columns that have no chance of casting shade on a
     move it has already made.
     """
-    # alg_params = AlgorithmParamaters(MaxShadeCalculator, OriginCursorInitializer, SystematicMoveProposer)
+    alg_params = AlgorithmParamaters(MaxShadeCellCalculator, OriginCursorInitializer, SystematicMoveProposer)
+
+    return algorithm_factory(alg_params, seed=seed)
 
 
 """

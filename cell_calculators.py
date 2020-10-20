@@ -5,7 +5,7 @@ class CellCalculator(abc.ABC):
     """Determines which cells on the board can be claimed by our algorithm. """
 
     def __init__(self, game_params):
-        self.game_dimensions = game_params.game_dimensions
+        self.w, self.h = game_params.game_dimensions
         self.shade_size = game_params.shade_size
 
     @abc.abstractmethod
@@ -19,9 +19,22 @@ class AllCellCalculator(CellCalculator):
 
     def get_claimable_cells(self):
         claimable_cells = []
-        h, w = self.game_dimensions
-        for row in range(h):
-            for col in range(w):
+        for row in range(self.h):
+            for col in range(self.w):
+                claimable_cells.append((col, row))
+
+        return claimable_cells
+
+
+class MaxShadeCellCalculator(CellCalculator):
+    """Claim all possible cells that we can guarantee will not case shade on each other."""
+
+    def get_claimable_cells(self):
+        claimable_cells = []
+        claimable_columns = range(0, self.w, self.shade_size + 1)
+
+        for row in range(self.h):
+            for col in claimable_columns:
                 claimable_cells.append((col, row))
 
         return claimable_cells
