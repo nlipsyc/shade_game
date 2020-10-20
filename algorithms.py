@@ -2,6 +2,9 @@ import abc
 import random
 
 import constants
+from cell_calculators import AllCellCalculator, CellCalculator
+from cursor_initializers import CursorInitializer, OriginCursorInitializer
+from move_proposers import MoveProposer, RandomMoveProposer
 
 # The move proposer is the new class type of what we were previously calling algorithms
 
@@ -17,76 +20,6 @@ class GameParamaters(object):
 class DefaultGameParameters(GameParamaters):
     def __init__(self):
         super().__init__(constants.GAME_SIZE, constants.SHADE_SIZE)
-
-
-class CellCalculator(abc.ABC):
-    """Determines which cells on the board can be claimed by our algorithm. """
-
-    def __init__(self, game_params):
-        self.game_dimensions = game_params.game_dimensions
-        self.shade_size = game_params.shade_size
-
-    @abc.abstractmethod
-    def get_claimable_cells(self) -> list[tuple[int, int]]:
-        """Retruns a one dimensional list of tuples representing the ordered coordinates of the cells."""
-        pass
-
-
-class AllCellCalculator(CellCalculator):
-    """All cells on the board can be claimed."""
-
-    def get_claimable_cells(self):
-        claimable_cells = []
-        h, w = self.game_dimensions
-        for row in range(h):
-            for col in range(w):
-                claimable_cells.append((col, row))
-
-        return claimable_cells
-
-
-class CursorInitializer(abc.ABC):
-    """Determines the starting index of an algorithm's cursor."""
-
-    def __init__(self, claimable_cells):
-        self.claimable_cells = claimable_cells
-
-    @abc.abstractmethod
-    def get_cursor_initial_index(self):
-        pass
-
-
-class OriginCursorInitializer(CursorInitializer):
-    """Initializes our cursor at the first claimable cell of the first row.
-
-    TODO Test me! I don't trust this
-    TODO This breaks if the first row is unclaimable.  Handle that edge case when we get to it.
-    """
-
-    def get_cursor_initial_index(self):
-        return self.claimable_cells[0]
-
-
-class MoveProposer(abc.ABC):
-    """Proposes a the cursor index that will be used to make the next move.
-
-    The move proposer is not responsible for determing if a move is valid.  Its sole responsibility is advancing the
-    cursor based on its internal logic.
-    """
-
-    def __init__(self, game_params: GameParamaters, claimable_cells: list, cursor_index: int):
-        self._game_params = game_params
-        self._claimable_cells = claimable_cells
-        self._cursor_index = cursor_index
-
-    @abc.abstractmethod
-    def propose_move(self):
-        pass
-
-
-class RandomMoveProposer(MoveProposer):
-    def propose_move(self):
-        return random.choice(self._claimable_cells)
 
 
 class AlgorithmParamaters(object):
@@ -252,6 +185,15 @@ def random_algorithm_factory(seed=None) -> ConstructedAlgorithm:
     alg_params = AlgorithmParamaters(AllCellCalculator, OriginCursorInitializer, RandomMoveProposer)
 
     return algorithm_factory(alg_params, seed=seed)
+
+
+def systematic_max_shade_factory(seed=None) -> ConstructedAlgorithm:
+    """ "Claimable spaces are columns 0 and 4. Starts at the origin and and goes through available spaces in order.
+
+    This algorithm works in order (arbitrary) but only makes moves in columns that have no chance of casting shade on a
+    move it has already made.
+    """
+    # alg_params = AlgorithmParamaters(MaxShadeCalculator, OriginCursorInitializer, SystematicMoveProposer)
 
 
 """
