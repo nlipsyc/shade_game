@@ -1,4 +1,5 @@
 import abc
+import random
 
 
 class CursorInitializer(abc.ABC):
@@ -17,3 +18,11 @@ class OriginCursorInitializer(CursorInitializer):
 
     def get_cursor_initial_index(self) -> int:
         return 0
+
+
+class RandomCursorInitializer(CursorInitializer):
+
+    """Initializes our cursor at a random cell."""
+
+    def get_cursor_initial_index(self) -> int:
+        return random.randrange(0, len(self.claimable_cells))

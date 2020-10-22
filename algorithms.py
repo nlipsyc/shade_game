@@ -2,8 +2,13 @@ import abc
 import random
 
 import constants
-from cell_calculators import AllCellCalculator, CellCalculator, MaxShadeCellCalculator
-from cursor_initializers import CursorInitializer, OriginCursorInitializer
+from cell_calculators import (
+    AllCellCalculator,
+    CellCalculator,
+    MaxShadeCellCalculator,
+    RandomOffsetMaxShadeCellCalculator,
+)
+from cursor_initializers import CursorInitializer, OriginCursorInitializer, RandomCursorInitializer
 from move_proposers import MoveProposer, RandomMoveProposer, SystematicMoveProposer
 
 # The move proposer is the new class type of what we were previously calling algorithms
@@ -11,6 +16,8 @@ from move_proposers import MoveProposer, RandomMoveProposer, SystematicMovePropo
 
 class GameParamaters(object):
     """Config object that helps us ensure we have all needed game parameters when creating an algorithm."""
+
+    # TODO This should be a dataclass
 
     def __init__(self, game_dimensions: list[int], shade_size):
         self.game_dimensions = game_dimensions
@@ -29,6 +36,8 @@ class AlgorithmParamaters(object):
     choose which of the available cells they will start on (CursorInitializer), and the specific algorithm they use
     to determine which cell should be chosen next (MoveProposer).
     """
+
+    # TODO This should be a dataclass
 
     def __init__(
         self,
@@ -139,12 +148,28 @@ def random_algorithm_factory(seed=None) -> ConstructedAlgorithm:
 
 
 def systematic_max_shade_factory(seed=None) -> ConstructedAlgorithm:
-    """ "Claimable spaces are columns 0 and 4. Starts at the origin and and goes through available spaces in order.
+    """Claimable spaces are columns 0 and 4. Starts at the origin and and goes through available spaces in order.
 
-    This algorithm works in order (arbitrary) but only makes moves in columns that have no chance of casting shade on a
+    This algorithm works in order but only makes moves in columns that have no chance of casting shade on a
     move it has already made.
     """
     alg_params = AlgorithmParamaters(MaxShadeCellCalculator, OriginCursorInitializer, SystematicMoveProposer)
+
+    return algorithm_factory(alg_params, seed=seed)
+
+
+def random_start_systematic_max_shade_factory(seed=None) -> ConstructedAlgorithm:
+    """Claimable spaces are columns 0 and 4. Starts at a random cell and and goes through available spaces in order."""
+
+    alg_params = AlgorithmParamaters(MaxShadeCellCalculator, RandomCursorInitializer, SystematicMoveProposer)
+
+    return algorithm_factory(alg_params, seed=seed)
+
+
+def random_start_random_offset_max_shade_factory(seed=None) -> ConstructedAlgorithm:
+    """Claimable spaces are 2 random columns spaced MAX_SHADE apart. Starts at a random cell and and goes through available spaces in order."""
+
+    alg_params = AlgorithmParamaters(RandomOffsetMaxShadeCellCalculator, RandomCursorInitializer, RandomMoveProposer)
 
     return algorithm_factory(alg_params, seed=seed)
 

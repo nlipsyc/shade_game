@@ -1,17 +1,22 @@
 from collections import Counter
 from dataclasses import dataclass
 
-from algorithms import random_algorithm_factory, systematic_max_shade_factory
+from algorithms import (
+    systematic_max_shade_factory,
+    random_start_systematic_max_shade_factory,
+    random_start_random_offset_max_shade_factory,
+)
 from game import FreeForAllGame
 from runtime import Runtime
 
 NUMBER_OF_ROUNDS = 100
 
-random_algorithm_0 = random_algorithm_factory()
-# random_algorithm_0 = systematic_max_shade_factory()
-random_algorithm_1 = systematic_max_shade_factory()
-rt = Runtime(FreeForAllGame, random_algorithm_0, random_algorithm_1)
-rt.simulate_game()
+
+def setup_game(switch_order=False):
+    algorithm_0 = random_start_systematic_max_shade_factory()
+    algorithm_1 = systematic_max_shade_factory()
+    rt = Runtime(FreeForAllGame, algorithm_0, algorithm_1, print_moves=True)
+    return rt
 
 
 @dataclass
@@ -39,6 +44,9 @@ class GameLog:
 game_log_collection = []
 for game in range(NUMBER_OF_ROUNDS):
     print(f"Game {game}\n")
+    # The order that players go confers a clear advantage, let's switch these each time to eliminate that noise
+    should_switch_order = game % 2 == 1
+    rt = setup_game(switch_order=should_switch_order)
     player_0_score, player_1_score = rt.simulate_game()
 
     log = GameLog(game, player_0_score, player_1_score)
